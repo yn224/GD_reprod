@@ -55,7 +55,7 @@ def Logistic_Regression_Batch_GD(x, y, eta, K, q=None):
         
     return w, b, np.array(costs)
 
-def Logistic_Regression_SGD(x, y, eta, K, q=None):
+def Logistic_Regression_SGD(x, y, eta, K, L, q=None):
     #Initialize weights and bias
     b = 0
     w = np.zeros([x.shape[1],1])
@@ -80,7 +80,7 @@ def Logistic_Regression_SGD(x, y, eta, K, q=None):
 
         #Update weights
         grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
-        w = w - a*grad
+        w = w - a*(grad + L*w)
         #b = b - a*(y_pred-yy)
 
         #Compute cost
