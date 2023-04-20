@@ -6,12 +6,12 @@ import numpy as np
 #--------------------------------------------------------------------
 # Finito
 #--------------------------------------------------------------------
-def Logistic_Regression_finito(x, y, eta, K, q=None):
+def Logistic_Regression_finito(x, y, mu, K, q=None):
     # Initialize weights and bias
     # b = 0.1
     w = np.zeros([x.shape[1],1])
-    g = np.zeros((x.shape[0], x.shape[1], 1)) # Gradient table
     P = np.zeros((x.shape[0], x.shape[1], 1)) # Weight table
+    G = np.zeros((x.shape[0], x.shape[1], 1)) # Gradient table
     idxs = []
     m = 0
     
@@ -24,15 +24,15 @@ def Logistic_Regression_finito(x, y, eta, K, q=None):
 
     #For each iteration
     for k in tqdm(range(K), disable=tqdmSwitch):        
-        # Learning rate - TODO: here, eta = \mu
-        a = 1/(alpha * eta * k)
+        # Learning rate - mu is convexity constant
+        a = 1/(alpha * mu * k)
 
-        #Draw random sample with replacement
+        # Draw random sample with replacement
         idx = np.random.randint(0,len(x))
         xx = x[idx]
         yy = y[idx]
 
-        #Check if data point has been seen
+        # Check if data point has been seen
         if idx not in idxs:
             idxs += [idx]
             m += 1
@@ -41,14 +41,15 @@ def Logistic_Regression_finito(x, y, eta, K, q=None):
         phi_bar = np.sum(P, axis=0) / m
 
         # Take the average of the gradients
-        g_bar = np.sum(g, axis=0) / m
+        g_bar = np.sum(G, axis=0) / m
 
         # Update weight
         w = phi_bar - a * g_bar
-        # b = b - a*(y_pred-yy)
+        b = b - a * (y_pred-yy)
+        
         # Store data
         P[idx] = w
-        g[idx] = grad
+        G[idx] = grad
         
         # Make prediction
         y_pred = bound(sigmoid(xx@w+b))
