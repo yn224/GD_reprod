@@ -8,7 +8,7 @@ Created on Sun Apr 16 20:13:30 2023
 import numpy as np
 from scipy.special import expit
 from tqdm.auto import tqdm
-from sklearn.metrics import log_loss
+from sklearn.metrics import log_loss, mean_squared_error
 
 tqdmSwitch = False
 
@@ -28,34 +28,11 @@ def Predict(x,w,b):
     pred = np.where(pred>0.5, 1, pred)
     return np.where(pred<=0.5, 0 ,pred)
 
-def Logistic_Regression_Batch_GD(x, y, eta, K, q=None):
-    #Initialize weights and bias
-    b = 0
-    w = np.zeros([x.shape[1],1])
-    n = x.shape[0]
-    
-    costs = []
-    y = y.reshape((len(y),1))
-    
-    #For each iteration
-    for k in tqdm(range(K), disable=tqdmSwitch):
-        
-        #Make prediction
-        y_pred = bound(sigmoid(x@w+b))
-        
-        #Update weights
-        w = w - eta*(x.T@(y_pred-y)/n)
-        #b = b - eta*np.sum(y_pred-y)
-        
-        #Compute cost
-        costs += [log_loss(y, y_pred)]
-        
-    if q != None:
-        q.put([w, b, np.array(costs)])
-        
-    return w, b, np.array(costs)
+def Linear_Predict(x,w):
+    return x@w
 
-def Logistic_Regression_SGD(x, y, eta, K, L, q=None):
+#---------- Logistic Regression Algorithms ----------#
+def Logistic_Regression_SGD(x, y, eta, K, L=0, q=None):
     #Initialize weights and bias
     b = 0
     w = np.zeros([x.shape[1],1])
@@ -81,7 +58,6 @@ def Logistic_Regression_SGD(x, y, eta, K, L, q=None):
         #Update weights
         grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
         w = w - a*(grad + L*w)
-        #b = b - a*(y_pred-yy)
 
         #Compute cost
         pred = bound(sigmoid(x@w+b))
@@ -92,52 +68,12 @@ def Logistic_Regression_SGD(x, y, eta, K, L, q=None):
         
     return w, b, np.array(costs)
 
-def Logistic_Regression_GA(x, y, eta, K, q=None):
-    #Initialize weights and bias
-    b = 0
-    w = np.zeros([x.shape[1],1])
-    g = 0
-    
-    costs = []
-    y = y.reshape((len(y),1))
-    
-    #For each iteration
-    for k in tqdm(range(K), disable=tqdmSwitch):
-        
-        #Draw random sample with replacement
-        idx = np.random.randint(0,len(y))
-        xx = x[idx]
-        yy = y[idx]
-        
-        #Fixed learning rate
-        a = eta
-        #a = eta/np.sqrt(k+1)
-        
-        #Make prediction
-        y_pred = bound(sigmoid(xx@w+b))
-
-        #Update weights
-        n = k+1
-        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
-        g += grad
- 
-        w = w - a*(g/n)
-        #b = b - a*(y_pred-yy)
-
-        #Compute cost
-        pred = bound(sigmoid(x@w+b))
-        costs += [log_loss(y, pred, labels = [0,1])]
-        
-    if q != None:
-        q.put([w, b, np.array(costs)])
-        
-    return w, b, np.array(costs)
-
-def Logistic_Regression_SAG(x, y, eta, K, L, q=None):
+def Logistic_Regression_SAG(x, y, eta, K, L=0, q=None):
     #Initialize weights and bias
     b = 0
     w = np.zeros([x.shape[1],1])
     g = np.zeros((x.shape[0], x.shape[1],1)) #Gradient table
+    G = np.zeros_like(w) #Gradient table sum
     idxs = []
     m = 0
     
@@ -165,11 +101,12 @@ def Logistic_Regression_SAG(x, y, eta, K, L, q=None):
         
         #Calculate current gradient
         grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
+        #Update gradient table
+        G = G - g[idx] + grad
+        #Update previous sample gradient
         g[idx] = grad
-
         #Update weights
-        w = w - a*((np.sum(g, axis=0)/m) + L*w)
-        #b = b - a*(y_pred-yy)
+        w = w - a*(G/m + L*w)
 
         #Compute cost
         pred = bound(sigmoid(x@w+b))
@@ -180,11 +117,12 @@ def Logistic_Regression_SAG(x, y, eta, K, L, q=None):
         
     return w, b, np.array(costs)
 
-def Logistic_Regression_SAGA(x, y, eta, K, L, q=None):
+def Logistic_Regression_SAGA(x, y, eta, K, L=0, q=None):
     #Initialize weights and bias
     b = 0
     w = np.zeros([x.shape[1],1])
     g = np.zeros((x.shape[0], x.shape[1],1)) #Gradient table
+    G = np.zeros_like(w) #Gradient table sum
     idxs = []
     m = 0
     
@@ -212,11 +150,11 @@ def Logistic_Regression_SAGA(x, y, eta, K, L, q=None):
         
         #Calculate current gradient
         grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
- 
         #Update weights
-        w = w - a*((grad - g[idx] + np.sum(g, axis=0)/m) + L*w)
-        #b = b - a*(y_pred-yy)
-
+        w = w - a*((grad - g[idx] + G/m) + L*w)
+        #Update gradient table
+        G = G - g[idx] + grad
+        #Update previous sample gradient
         g[idx] = grad
 
         #Compute cost
@@ -291,101 +229,211 @@ def Logistic_Regression_finito(x, y, mu, K, q=None):
         
     return w, b, np.array(costs)
 
-# def Logistic_Regression_SAG(x, y, eta, K, q=None):
-#     #Initialize weights and bias
-#     b = 0.1
-#     w = np.zeros([x.shape[1],1])
-#     g = np.zeros((x.shape[0], x.shape[1],1)) #Gradient table
-#     g_prev = 0 #Previous gradient
-#     idxs = []
-#     m = 0
-    
-#     costs = []
-#     y = y.reshape((len(y),1))
-    
-#     #For each iteration
-#     for k in tqdm(range(K), disable=tqdmSwitch):
-        
-#         #Draw random sample with replacement
-#         idx = np.random.randint(0,len(y))
-#         xx = x[idx]
-#         yy = y[idx]
-        
-#         #Fixed learning rate
-#         a = eta
-        
-#         #Make prediction
-#         y_pred = bound(sigmoid(xx@w+b))
 
-#         #Check if data point has been seen
-#         if idx not in idxs:
-#             idxs += [idx]
-#             m += 1
+#---------- Linear Regression Algorithms ----------#
+def Linear_Regression_SGD(x, y, eta, K, L=0, q=None):
+    #Initialize weights and bias
+    b = 0
+    w = np.zeros([x.shape[1],1])
+    
+    costs = []
+    norm = []
+    y = y.reshape((len(y),1))
+    
+    #For each iteration
+    for k in tqdm(range(K), disable=tqdmSwitch):
         
-#         #Calculate current gradient
-#         grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
+        #Draw random sample with replacement
+        idx = np.random.randint(0,len(y))
+        xx = x[idx]
+        yy = y[idx]
+        
+        #Fixed learning rate
+        a = eta
+        #a = eta/np.sqrt(k+1)
+        
+        #Make prediction
+        y_pred = xx@w
+
+        #Update weights
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
+        w = w - a*(grad + L*w)
+
+        #Compute cost
+        pred = x@w
+        #norm += [np.linalg.norm(grad)]
+        costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
+        
+    if q != None:
+        q.put([w, b, np.array(costs)])
+        
+    return w, b, np.array(costs)
+
+def Linear_Regression_SAG(x, y, eta, K, L=0, q=None):
+    #Initialize weights and bias
+    b = 0
+    w = np.zeros([x.shape[1],1])
+    g = np.zeros((x.shape[0], x.shape[1],1)) #Gradient table
+    G = np.zeros_like(w) #Gradient table sum
+    idxs = []
+    m = 0
+    
+    costs = []
+    norm = []
+    y = y.reshape((len(y),1))
+    
+    #For each iteration
+    for k in tqdm(range(K), disable=tqdmSwitch):
+        
+        #Draw random sample with replacement
+        idx = np.random.randint(0,len(y))
+        xx = x[idx]
+        yy = y[idx]
+        
+        #Fixed learning rate
+        a = eta
+        
+        #Make prediction
+        y_pred = xx@w
+
+        #Check if data point has been seen
+        if idx not in idxs:
+            idxs += [idx]
+            m += 1
+        
+        #Calculate current gradient
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
+        #Update gradient table
+        G = G - g[idx] + grad
+        #Update previous sample gradient
+        g[idx] = grad
+        #Update weights
+        w = w - a*(G/m + L*w)
+
+        #Compute cost
+        pred = x@w
+        costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
+        
+    if q != None:
+        q.put([w, b, np.array(costs)])
+        
+    return w, b, np.array(costs)
+
+def Linear_Regression_SAGA(x, y, eta, K, L=0, q=None):
+    #Initialize weights and bias
+    b = 0
+    w = np.zeros([x.shape[1],1])
+    g = np.zeros((x.shape[0], x.shape[1],1)) #Gradient table
+    G = np.zeros_like(w) #Gradient table sum
+    idxs = []
+    m = 0
+    
+    costs = []
+    norm = []
+    y = y.reshape((len(y),1))
+    
+    #For each iteration
+    for k in tqdm(range(K), disable=tqdmSwitch):
+        
+        #Draw random sample with replacement
+        idx = np.random.randint(0,len(y))
+        xx = x[idx]
+        yy = y[idx]
+        
+        #Fixed learning rate
+        a = eta
+        
+        #Make prediction
+        y_pred = xx@w
+
+        #Check if data point has been seen
+        if idx not in idxs:
+            idxs += [idx]
+            m += 1
+        
+         #Calculate current gradient
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
+        #Update weights
+        w = w - a*((grad - g[idx] + G/m) + L*w)
+        #Update gradient table
+        G = G - g[idx] + grad
+        #Update previous sample gradient
+        g[idx] = grad
+
+        #Compute cost
+        pred = x@w
+        costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
+        
+    if q != None:
+        q.put([w, b, np.array(costs)])
+        
+    return w, b, np.array(costs)
+
+#---------- Others ----------#
+def Logistic_Regression_Batch_GD(x, y, eta, K, q=None):
+    #Initialize weights and bias
+    b = 0
+    w = np.zeros([x.shape[1],1])
+    n = x.shape[0]
+    
+    costs = []
+    y = y.reshape((len(y),1))
+    
+    #For each iteration
+    for k in tqdm(range(K), disable=tqdmSwitch):
+        
+        #Make prediction
+        y_pred = bound(sigmoid(x@w+b))
+        
+        #Update weights
+        w = w - eta*(x.T@(y_pred-y)/n)
+        #b = b - eta*np.sum(y_pred-y)
+        
+        #Compute cost
+        costs += [log_loss(y, y_pred)]
+        
+    if q != None:
+        q.put([w, b, np.array(costs)])
+        
+    return w, b, np.array(costs)
+def Logistic_Regression_GA(x, y, eta, K, q=None):
+
+    #Initialize weights and bias
+    b = 0
+    w = np.zeros([x.shape[1],1])
+    g = 0
+    
+    costs = []
+    y = y.reshape((len(y),1))
+    
+    #For each iteration
+    for k in tqdm(range(K), disable=tqdmSwitch):
+        
+        #Draw random sample with replacement
+        idx = np.random.randint(0,len(y))
+        xx = x[idx]
+        yy = y[idx]
+        
+        #Fixed learning rate
+        a = eta
+        #a = eta/np.sqrt(k+1)
+        
+        #Make prediction
+        y_pred = bound(sigmoid(xx@w+b))
+
+        #Update weights
+        n = k+1
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
+        g += grad
  
-#         #Update weights
-#         w = w - a*(grad - g_prev + np.sum(g, axis=0))/m
-#         b = b - a*(y_pred-yy)
-        
-#         g[idx] = grad
-#         g_prev = grad
+        w = w - a*(g/n)
+        #b = b - a*(y_pred-yy)
 
-#         #Compute cost
-#         pred = bound(sigmoid(x@w+b))
-#         costs += [log_loss(y, pred, labels = [0,1])]
+        #Compute cost
+        pred = bound(sigmoid(x@w+b))
+        costs += [log_loss(y, pred, labels = [0,1])]
         
-#     if q != None:
-#         q.put([w, b, np.array(costs)])
+    if q != None:
+        q.put([w, b, np.array(costs)])
         
-#     return w, b, np.array(costs)
-
-# def Logistic_Regression_SAG_FAST(x, y, eta, K, L, q=None):
-#     #Initialize weights and bias
-#     b = 0
-#     w = np.zeros([x.shape[1],1])
-#     G = np.zeros_like(w) #Gradient table sum
-#     g = np.zeros((x.shape[0], x.shape[1],1)) #Gradient table
-#     idxs = []
-#     m = 0
-    
-#     costs = []
-#     y = y.reshape((len(y),1))
-    
-#     #For each iteration
-#     for k in tqdm(range(K), disable=tqdmSwitch):
-        
-#         #Draw random sample with replacement
-#         idx = np.random.randint(0,len(y))
-#         xx = x[idx]
-#         yy = y[idx]
-        
-#         #Fixed learning rate
-#         a = eta
-        
-#         #Make prediction
-#         y_pred = bound(sigmoid(xx@w+b))
-
-#         #Check if data point has been seen
-#         if idx not in idxs:
-#             idxs += [idx]
-#             m += 1
-        
-#         #Calculate current gradient
-#         grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
-#         G = G + (grad) - ((g[idx])) 
-#         g[idx] = grad
-        
-#         #Update weights
-#         w = w - a*(G/m + L*w)
-#         #b = b - a*(y_pred-yy)
-
-#         #Compute cost
-#         pred = bound(sigmoid(x@w+b))
-#         costs += [log_loss(y, pred, labels = [0,1])]
-        
-#     if q != None:
-#         q.put([w, b, np.array(costs)])
-        
-#     return w, b, np.array(costs)
+    return w, b, np.array(costs)
