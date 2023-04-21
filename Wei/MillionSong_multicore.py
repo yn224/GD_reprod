@@ -17,7 +17,7 @@ plt.rcParams['figure.figsize'] = [8, 8]
 
 if __name__ == '__main__':
     #Load data and split train and test
-    filename = 'YearPredictionMSD.txt'
+    filename = 'dataset/YearPredictionMSD.txt'
     data = np.loadtxt(filename, delimiter=',', skiprows=1)
     y = data[:,0]
     y = y.reshape((len(y), 1))

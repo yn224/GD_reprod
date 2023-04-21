@@ -12,12 +12,12 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from multiprocessing import Process, Queue
 from sklearn.datasets import load_svmlight_file
-from algorithms import convert_labels, Predict, Logistic_Regression_Batch_GD, Logistic_Regression_SGD, Logistic_Regression_GA, Logistic_Regression_SAG, Logistic_Regression_SAGA
+from algorithms import Logistic_Regression_SGD, Logistic_Regression_SAG, Logistic_Regression_SAGA
 plt.rcParams['figure.figsize'] = [8, 8]
 
 if __name__ == '__main__':
     #Load data and split train and test
-    X, y = load_svmlight_file("covtype.libsvm.binary.scale.bz2")
+    X, y = load_svmlight_file("dataset/covtype.libsvm.binary.scale.bz2")
     y -= 1
     y = y.reshape(len(y),1)
     X = X.toarray()

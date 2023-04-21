@@ -18,7 +18,7 @@ plt.rcParams['figure.figsize'] = [8, 8]
 
 if __name__ == '__main__':
     #Load data and split train and test
-    df = pd.read_csv("slice_localization_data.csv")
+    df = pd.read_csv("dataset/slice_localization_data.csv")
     y = np.array(df["reference"])
     y = y.reshape((len(y), 1))
     df2 = df.drop("reference", axis=1)
@@ -30,10 +30,10 @@ if __name__ == '__main__':
     q3 = Queue()
     
     tic = time.perf_counter()
-    iterations = 2000000
+    iterations = 600000
     p1 = Process(target=Linear_Regression_SGD, args=(X_train, y_train, 4e-5, iterations, 0, q1))
-    p2 = Process(target=Linear_Regression_SAG, args=(X_train, y_train, 1.5e-4, iterations, 0, q2))
-    p3 = Process(target=Linear_Regression_SAGA, args=(X_train, y_train, 1.5e-4, iterations, 0, q3))
+    p2 = Process(target=Linear_Regression_SAG, args=(X_train, y_train, 1.2e-4, iterations, 0, q2))
+    p3 = Process(target=Linear_Regression_SAGA, args=(X_train, y_train, 1.2e-4, iterations, 0, q3))
 
     
     p1.start()
@@ -53,8 +53,8 @@ if __name__ == '__main__':
     
     #Plots
     plt.plot(np.arange(len(costs1)),costs1, label="SGD", alpha=0.7)
+    plt.plot(np.arange(len(costs2)),costs2, label="SAG", alpha=0.7)
     plt.plot(np.arange(len(costs3)),costs3, label="SAGA", alpha=0.7)
-    plt.plot(np.arange(len(costs2)),costs2, label="SAG", alpha=1)
     
     plt.xlabel("Iterations")
     plt.ylabel("Squared Loss")

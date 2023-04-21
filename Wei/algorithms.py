@@ -61,7 +61,7 @@ def Logistic_Regression_SGD(x, y, eta, K, L=0, q=None):
         w = w - a*(grad + L*w)
 
         #Compute cost
-        if ((k)%weightEvalRes==0):
+        if ((k+1)%weightEvalRes==0):
             pred = bound(sigmoid(x@w+b))
             costs += [log_loss(y, pred, labels = [0,1])]
         
@@ -111,7 +111,7 @@ def Logistic_Regression_SAG(x, y, eta, K, L=0, q=None):
         w = w - a*(G/m + L*w)
 
         #Compute cost
-        if ((k)%weightEvalRes==0):
+        if ((k+1)%weightEvalRes==0):
             pred = bound(sigmoid(x@w+b))
             costs += [log_loss(y, pred, labels = [0,1])]
         
@@ -161,7 +161,7 @@ def Logistic_Regression_SAGA(x, y, eta, K, L=0, q=None):
         g[idx] = grad
 
         #Compute cost
-        if ((k)%weightEvalRes==0):
+        if ((k+1)%weightEvalRes==0):
             pred = bound(sigmoid(x@w+b))
             costs += [log_loss(y, pred, labels = [0,1])]
         
@@ -170,12 +170,15 @@ def Logistic_Regression_SAGA(x, y, eta, K, L=0, q=None):
         
     return w, b, np.array(costs)
 
-def Logistic_Regression_finito(x, y, mu, K, q=None):
+def Logistic_Regression_finito(x, y, mu, K, L=0, q=None):
     # Initialize weights and bias
     # b = 0.1
     w = np.zeros([x.shape[1],1])
-    P = np.zeros((x.shape[0], x.shape[1], 1)) # Weight table
-    G = np.zeros((x.shape[0], x.shape[1], 1)) # Gradient table
+    g = np.zeros((x.shape[0], x.shape[1], 1)) # Gradient table
+    p = np.zeros((x.shape[0], x.shape[1], 1)) # Weight table
+    G = np.zeros_like(w) #Gradient table sum
+    P = np.zeros_like(w) #Weight table sum
+    
     grad = np.zeros_like(w)
     idxs = []
     m = 0
@@ -205,18 +208,20 @@ def Logistic_Regression_finito(x, y, mu, K, q=None):
             m += 1
         
         # Take the average of the weights \phi
-        phi_bar = np.sum(P, axis=0) / m
+        phi_bar = P / m
 
         # Take the average of the gradients
-        g_bar = np.sum(G, axis=0) / m
+        g_bar = G / m
 
         # Update weight
         w = phi_bar - a * g_bar
-        #b = b - a * (y_pred-yy)
-        
-        # Store data
-        P[idx] = w
-        G[idx] = grad
+
+        #Update gradient and weight table
+        G = G - g[idx] + grad
+        P = P - p[idx] + w
+        #Update previous sample gradient and weight
+        g[idx] = grad
+        p[idx] = w
         
         # Make prediction
         y_pred = bound(sigmoid(xx@w+b))
@@ -225,7 +230,7 @@ def Logistic_Regression_finito(x, y, mu, K, q=None):
         grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
 
         #Compute cost
-        if ((k)%weightEvalRes==0):
+        if ((k+1)%weightEvalRes==0):
             pred = bound(sigmoid(x@w+b))
             costs += [log_loss(y, pred, labels = [0,1])]
 
