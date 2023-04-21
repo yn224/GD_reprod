@@ -11,6 +11,7 @@ from tqdm.auto import tqdm
 from sklearn.metrics import log_loss, mean_squared_error
 
 tqdmSwitch = False
+weightEvalRes = 5000
 
 def convert_labels(y):
     y = np.where(y<5, 0, y)
@@ -60,8 +61,9 @@ def Logistic_Regression_SGD(x, y, eta, K, L=0, q=None):
         w = w - a*(grad + L*w)
 
         #Compute cost
-        pred = bound(sigmoid(x@w+b))
-        costs += [log_loss(y, pred, labels = [0,1])]
+        if ((k)%weightEvalRes==0):
+            pred = bound(sigmoid(x@w+b))
+            costs += [log_loss(y, pred, labels = [0,1])]
         
     if q != None:
         q.put([w, b, np.array(costs)])
@@ -109,8 +111,9 @@ def Logistic_Regression_SAG(x, y, eta, K, L=0, q=None):
         w = w - a*(G/m + L*w)
 
         #Compute cost
-        pred = bound(sigmoid(x@w+b))
-        costs += [log_loss(y, pred, labels = [0,1])]
+        if ((k)%weightEvalRes==0):
+            pred = bound(sigmoid(x@w+b))
+            costs += [log_loss(y, pred, labels = [0,1])]
         
     if q != None:
         q.put([w, b, np.array(costs)])
@@ -158,8 +161,9 @@ def Logistic_Regression_SAGA(x, y, eta, K, L=0, q=None):
         g[idx] = grad
 
         #Compute cost
-        pred = bound(sigmoid(x@w+b))
-        costs += [log_loss(y, pred, labels = [0,1])]
+        if ((k)%weightEvalRes==0):
+            pred = bound(sigmoid(x@w+b))
+            costs += [log_loss(y, pred, labels = [0,1])]
         
     if q != None:
         q.put([w, b, np.array(costs)])
@@ -221,8 +225,9 @@ def Logistic_Regression_finito(x, y, mu, K, q=None):
         grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
 
         #Compute cost
-        pred = bound(sigmoid(x@w+b))
-        costs += [log_loss(y, pred, labels = [0,1])]
+        if ((k)%weightEvalRes==0):
+            pred = bound(sigmoid(x@w+b))
+            costs += [log_loss(y, pred, labels = [0,1])]
 
     if q != None:
         q.put([w, b, np.array(costs)])
@@ -237,7 +242,6 @@ def Linear_Regression_SGD(x, y, eta, K, L=0, q=None):
     w = np.zeros([x.shape[1],1])
     
     costs = []
-    norm = []
     y = y.reshape((len(y),1))
     
     #For each iteration
@@ -260,9 +264,9 @@ def Linear_Regression_SGD(x, y, eta, K, L=0, q=None):
         w = w - a*(grad + L*w)
 
         #Compute cost
-        pred = x@w
-        #norm += [np.linalg.norm(grad)]
-        costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
+        if ((k+1)%weightEvalRes==0):
+            pred = x@w
+            costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
         
     if q != None:
         q.put([w, b, np.array(costs)])
@@ -279,7 +283,6 @@ def Linear_Regression_SAG(x, y, eta, K, L=0, q=None):
     m = 0
     
     costs = []
-    norm = []
     y = y.reshape((len(y),1))
     
     #For each iteration
@@ -311,8 +314,9 @@ def Linear_Regression_SAG(x, y, eta, K, L=0, q=None):
         w = w - a*(G/m + L*w)
 
         #Compute cost
-        pred = x@w
-        costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
+        if ((k+1)%weightEvalRes==0):
+            pred = x@w
+            costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
         
     if q != None:
         q.put([w, b, np.array(costs)])
@@ -329,7 +333,6 @@ def Linear_Regression_SAGA(x, y, eta, K, L=0, q=None):
     m = 0
     
     costs = []
-    norm = []
     y = y.reshape((len(y),1))
     
     #For each iteration
@@ -361,8 +364,9 @@ def Linear_Regression_SAGA(x, y, eta, K, L=0, q=None):
         g[idx] = grad
 
         #Compute cost
-        pred = x@w
-        costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
+        if ((k+1)%weightEvalRes==0):
+            pred = x@w
+            costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
         
     if q != None:
         q.put([w, b, np.array(costs)])
