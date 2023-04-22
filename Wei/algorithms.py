@@ -54,7 +54,7 @@ def Logistic_Regression_SGD(x, y, eta, K, L=0, q=None):
         #a = eta/np.sqrt(k+1)
         
         #Make prediction
-        y_pred = bound(sigmoid(xx@w+b))
+        y_pred = bound(sigmoid(xx@w))
 
         #Update weights
         grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
@@ -62,7 +62,7 @@ def Logistic_Regression_SGD(x, y, eta, K, L=0, q=None):
 
         #Compute cost
         if ((k+1)%weightEvalRes==0):
-            pred = bound(sigmoid(x@w+b))
+            pred = bound(sigmoid(x@w))
             costs += [log_loss(y, pred, labels = [0,1])]
         
     if q != None:
@@ -94,7 +94,7 @@ def Logistic_Regression_SAG(x, y, eta, K, L=0, q=None):
         a = eta
         
         #Make prediction
-        y_pred = bound(sigmoid(xx@w+b))
+        y_pred = bound(sigmoid(xx@w))
 
         #Check if data point has been seen
         if idx not in idxs:
@@ -112,7 +112,7 @@ def Logistic_Regression_SAG(x, y, eta, K, L=0, q=None):
 
         #Compute cost
         if ((k+1)%weightEvalRes==0):
-            pred = bound(sigmoid(x@w+b))
+            pred = bound(sigmoid(x@w))
             costs += [log_loss(y, pred, labels = [0,1])]
         
     if q != None:
@@ -144,7 +144,7 @@ def Logistic_Regression_SAGA(x, y, eta, K, L=0, q=None):
         a = eta
         
         #Make prediction
-        y_pred = bound(sigmoid(xx@w+b))
+        y_pred = bound(sigmoid(xx@w))
 
         #Check if data point has been seen
         if idx not in idxs:
@@ -162,7 +162,7 @@ def Logistic_Regression_SAGA(x, y, eta, K, L=0, q=None):
 
         #Compute cost
         if ((k+1)%weightEvalRes==0):
-            pred = bound(sigmoid(x@w+b))
+            pred = bound(sigmoid(x@w))
             costs += [log_loss(y, pred, labels = [0,1])]
         
     if q != None:
@@ -178,7 +178,7 @@ def Logistic_Regression_finito(x, y, mu, K, L=0, q=None):
     p = np.zeros((x.shape[0], x.shape[1], 1)) # Weight table
     G = np.zeros_like(w) #Gradient table sum
     P = np.zeros_like(w) #Weight table sum
-    
+    idx_range = np.arange(x.shape[0])
     grad = np.zeros_like(w)
     idxs = []
     m = 0
@@ -198,7 +198,10 @@ def Logistic_Regression_finito(x, y, mu, K, L=0, q=None):
         a = mu
 
         # Draw random sample with replacement
-        idx = np.random.randint(0,len(x))
+        #idx = np.random.randint(0,len(x))
+        if (k%x.shape[0])==0:
+            np.random.shuffle(idx_range)
+        idx = idx_range[k%x.shape[0]]
         xx = x[idx]
         yy = y[idx]
 
@@ -206,32 +209,35 @@ def Logistic_Regression_finito(x, y, mu, K, L=0, q=None):
         if idx not in idxs:
             idxs += [idx]
             m += 1
+
+        # Make prediction
+        y_pred = bound(sigmoid(xx@w))
         
-        # Take the average of the weights \phi
-        phi_bar = P / m
-
-        # Take the average of the gradients
-        g_bar = G / m
-
-        # Update weight
-        w = phi_bar - a * g_bar
+        # Calculate current gradient
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
 
         #Update gradient and weight table
         G = G - g[idx] + grad
         P = P - p[idx] + w
+
+        # Take the average of the weights \phi
+        phi_bar = P / x.shape[0]
+        #phi_bar = P / m
+
+        # Take the average of the gradients
+        g_bar = G / x.shape[0]
+        #g_bar = G / m
+
+        # Update weight
+        w = phi_bar - a * g_bar
+
         #Update previous sample gradient and weight
         g[idx] = grad
         p[idx] = w
-        
-        # Make prediction
-        y_pred = bound(sigmoid(xx@w+b))
-
-        # Calculate current gradient
-        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
 
         #Compute cost
         if ((k+1)%weightEvalRes==0):
-            pred = bound(sigmoid(x@w+b))
+            pred = bound(sigmoid(x@w))
             costs += [log_loss(y, pred, labels = [0,1])]
 
     if q != None:
@@ -373,6 +379,81 @@ def Linear_Regression_SAGA(x, y, eta, K, L=0, q=None):
             pred = x@w
             costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
         
+    if q != None:
+        q.put([w, b, np.array(costs)])
+        
+    return w, b, np.array(costs)
+
+def Linear_Regression_finito(x, y, mu, K, L=0, q=None):
+    # Initialize weights and bias
+    # b = 0.1
+    w = np.zeros([x.shape[1],1])
+    g = np.zeros((x.shape[0], x.shape[1], 1)) # Gradient table
+    p = np.zeros((x.shape[0], x.shape[1], 1)) # Weight table
+    G = np.zeros_like(w) #Gradient table sum
+    P = np.zeros_like(w) #Weight table sum
+    idx_range = np.arange(x.shape[0])
+    grad = np.zeros_like(w)
+    idxs = []
+    m = 0
+    b = 0
+    
+    costs = []
+    y = y.reshape((len(y),1))
+    
+    # TODO: you can change this to whatever alpha value it is
+    # - pg. 7 of Finito paper.
+    alpha = 1
+
+    #For each iteration
+    for k in tqdm(range(K), disable=tqdmSwitch):        
+        # Learning rate - mu is convexity constant
+        #a = 1/(alpha * mu * (k+1))
+        a = mu
+
+        # Draw random sample with replacement
+        #idx = np.random.randint(0,len(x))
+        if (k%x.shape[0])==0:
+            np.random.shuffle(idx_range)
+        idx = idx_range[k%x.shape[0]]
+        xx = x[idx]
+        yy = y[idx]
+
+        # Check if data point has been seen
+        if idx not in idxs:
+            idxs += [idx]
+            m += 1
+
+        # Make prediction
+        y_pred = xx@w
+        
+        # Calculate current gradient
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
+
+        #Update gradient and weight table
+        G = G - g[idx] + grad
+        P = P - p[idx] + w
+
+        # Take the average of the weights \phi
+        phi_bar = P / x.shape[0]
+        #phi_bar = P / m
+
+        # Take the average of the gradients
+        g_bar = G / x.shape[0]
+        #g_bar = G / m
+
+        # Update weight
+        w = phi_bar - a * g_bar
+
+        #Update previous sample gradient and weight
+        g[idx] = grad
+        p[idx] = w
+
+        #Compute cost
+        if ((k+1)%weightEvalRes==0):
+            pred = x@w
+            costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
+
     if q != None:
         q.put([w, b, np.array(costs)])
         

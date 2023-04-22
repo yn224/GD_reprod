@@ -30,9 +30,9 @@ if __name__ == '__main__':
     
     tic = time.perf_counter()
     iterations = 5000000
-    p1 = Process(target=Linear_Regression_SGD, args=(X_train, y_train, 2e-9, iterations, 0, q1))
-    p2 = Process(target=Linear_Regression_SAG, args=(X_train, y_train, 3.2e-9, iterations, 0, q2))
-    p3 = Process(target=Linear_Regression_SAGA, args=(X_train, y_train, 3.2e-9, iterations, 0, q3))
+    p1 = Process(target=Linear_Regression_SGD, args=(X_train, y_train, 3e-9, iterations, 0, q1))
+    p2 = Process(target=Linear_Regression_SAG, args=(X_train, y_train, 3.6e-9, iterations, 0, q2))
+    p3 = Process(target=Linear_Regression_SAGA, args=(X_train, y_train, 3.6e-9, iterations, 0, q3))
 
     
     p1.start()
