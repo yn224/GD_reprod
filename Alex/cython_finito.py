@@ -1,16 +1,26 @@
 #====================================================================
-# Finito algorithm implementation
+# Finito algorithm implementation in Cython
 #====================================================================
-from common import *
-from tqdm import tqdm
+# RUN IN JUPYTER NOTEBOOK
+%load_ext Cython
 
-def run_finito(x, y, mu, iterations, q=None):
-    # Initialize weights and bias
-    # b = 0.1
-    w = np.zeros([x.shape[1],1])
-    P = np.zeros((x.shape[0], x.shape[1], 1)) # Weight table
-    G = np.zeros((x.shape[0], x.shape[1], 1)) # Gradient table
-    idxs = []
+# Standard python import
+import numpy as np
+
+# Compile-time import of numpy
+cimport numpy as np
+
+# Necessary import to use any of use any of numpy PyArray_* API (e.g., shape)
+np.import_array()
+
+# Fix the data type
+DTYPE = np.float64
+
+def cython_finito(np.ndarray x, np.ndarray y, np.float64 step, np.int n_iters):
+    cdef np.ndarray w = np.zeros([x.shape[1],1], dtype=DTYPE)
+    cdef np.ndarray P = np.zeros((x.shape[0], x.shape[1], 1), dtype=DTYPE) # Weight table
+    cdef np.ndarray G = np.zeros((x.shape[0], x.shape[1], 1)) # Gradient table
+    cdef np.ndarray idxs = []
     m = 0
     
     costs = []
@@ -20,10 +30,10 @@ def run_finito(x, y, mu, iterations, q=None):
     # - pg. 7 of Finito paper.
     alpha = 2
 
-    #For each iteration
-    for k in tqdm(range(iterations)):        
+    # For each iteration
+    for k in tqdm(range(K), disable=tqdmSwitch):        
         # Learning rate - mu is convexity constant
-        a = 1/(alpha * mu * k)
+        a = 1/(alpha * mu)
 
         # Draw random sample with replacement
         idx = np.random.randint(0,len(x))
