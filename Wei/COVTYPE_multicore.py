@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from multiprocessing import Process, Queue
 from sklearn.datasets import load_svmlight_file
-from algorithms import Logistic_Regression_SGD, Logistic_Regression_SAG, Logistic_Regression_SAGA
+from algorithms import Logistic_Regression_SGD, Logistic_Regression_SAG, Logistic_Regression_SAGA, Logistic_Regression_finito
 plt.rcParams['figure.figsize'] = [8, 8]
 
 if __name__ == '__main__':
@@ -26,24 +26,29 @@ if __name__ == '__main__':
     q1 = Queue()
     q2 = Queue()
     q3 = Queue()
+    q4 = Queue()
     
     tic = time.perf_counter()
     iterations = 2000000
     p1 = Process(target=Logistic_Regression_SGD, args=(X_train, y_train, 0.01, iterations, 0, q1))
     p2 = Process(target=Logistic_Regression_SAG, args=(X_train, y_train, 0.06, iterations, 0, q2))
     p3 = Process(target=Logistic_Regression_SAGA, args=(X_train, y_train, 0.06, iterations, 0, q3))
+    p4 = Process(target=Logistic_Regression_finito, args=(X_train, y_train, 100, iterations, 0, q4))
     
     p1.start()
     p2.start()
     p3.start()
+    p4.start()
     
     w1,b1,costs1 = q1.get()
     w2,b2,costs2 = q2.get()
     w3,b3,costs3 = q3.get()
+    w4,b4,costs4 = q4.get()
     
     p1.join()
     p2.join()
     p3.join()
+    p4.join()
     
     toc = time.perf_counter()
     print(f"Ran in {toc - tic:0.4f} seconds")
@@ -52,10 +57,11 @@ if __name__ == '__main__':
     plt.plot(np.arange(len(costs1)),costs1, label="SGD", alpha=0.7)
     plt.plot(np.arange(len(costs2)),costs2, label="SAG", alpha=0.7)
     plt.plot(np.arange(len(costs3)),costs3, label="SAGA", alpha=0.7)
+    plt.plot(np.arange(len(costs4)),costs4, label="Finito", alpha=0.7)
 
-    plt.xlabel("Iterations")
+    plt.xlabel("Weight Evaluations")
     plt.ylabel("Log Loss")
-    plt.title("Iterations vs Loss")
+    plt.title("Covertype")
     plt.legend()
     plt.yscale("log")
     plt.show()

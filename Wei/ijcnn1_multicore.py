@@ -59,9 +59,9 @@ if __name__ == '__main__':
     plt.plot(np.arange(len(costs3)),costs3, label="SAGA", alpha=0.7)
     plt.plot(np.arange(len(costs4)),costs4, label="Finito", alpha=0.7)
 
-    plt.xlabel("Iterations")
+    plt.xlabel("Weight Evaluations")
     plt.ylabel("Log Loss")
-    plt.title("Iterations vs Loss")
+    plt.title("ijcnn1")
     plt.legend()
     plt.yscale("log")
     plt.show()

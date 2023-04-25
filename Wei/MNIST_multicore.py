@@ -26,10 +26,7 @@ if __name__ == '__main__':
     y = convert_labels(y)
     y = y.reshape(len(y),1)
     X = X.toarray()
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
-    print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-    print(X_train)
-    print(y_train)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
     
     q1 = Queue()
     q2 = Queue()
@@ -67,9 +64,9 @@ if __name__ == '__main__':
     plt.plot(np.arange(len(costs3)),costs3, label="SAGA", alpha=0.7)
     plt.plot(np.arange(len(costs4)),costs4, label="Finito", alpha=0.7)
 
-    plt.xlabel("Iterations")
+    plt.xlabel("Weight Evaluations")
     plt.ylabel("Log Loss")
-    plt.title("Iterations vs Loss")
+    plt.title("MNIST")
     plt.legend()
     plt.yscale("log")
     plt.show()
