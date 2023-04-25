@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import time
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
+from sklearn.datasets import load_digits
 from multiprocessing import Process, Queue
 from sklearn.datasets import load_svmlight_file
 from algorithms import convert_labels, Logistic_Regression_SGD, Logistic_Regression_SAG, Logistic_Regression_SAGA, Logistic_Regression_finito
@@ -25,8 +26,10 @@ if __name__ == '__main__':
     y = convert_labels(y)
     y = y.reshape(len(y),1)
     X = X.toarray()
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
-
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
+    print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+    print(X_train)
+    print(y_train)
     
     q1 = Queue()
     q2 = Queue()
@@ -64,9 +67,9 @@ if __name__ == '__main__':
     plt.plot(np.arange(len(costs3)),costs3, label="SAGA", alpha=0.7)
     plt.plot(np.arange(len(costs4)),costs4, label="Finito", alpha=0.7)
 
-    plt.xlabel("Weight Evaluations")
+    plt.xlabel("Iterations")
     plt.ylabel("Log Loss")
-    plt.title("MNIST")
+    plt.title("Iterations vs Loss")
     plt.legend()
     plt.yscale("log")
     plt.show()

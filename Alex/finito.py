@@ -1,12 +1,10 @@
 #====================================================================
 # Finito algorithm implementation
 #====================================================================
-import numpy as np
+from common import *
+from tqdm import tqdm
 
-#--------------------------------------------------------------------
-# Finito
-#--------------------------------------------------------------------
-def Logistic_Regression_finito(x, y, mu, K, q=None):
+def run_finito(x, y, mu, iterations, q=None):
     # Initialize weights and bias
     # b = 0.1
     w = np.zeros([x.shape[1],1])
@@ -23,7 +21,7 @@ def Logistic_Regression_finito(x, y, mu, K, q=None):
     alpha = 2
 
     #For each iteration
-    for k in tqdm(range(K), disable=tqdmSwitch):        
+    for k in tqdm(range(iterations)):        
         # Learning rate - mu is convexity constant
         a = 1/(alpha * mu * k)
 
