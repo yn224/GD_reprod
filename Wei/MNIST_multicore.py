@@ -27,6 +27,9 @@ if __name__ == '__main__':
     y = y.reshape(len(y),1)
     X = X.toarray()
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
+    print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+    print(X_train)
+    print(y_train)
     
     q1 = Queue()
     q2 = Queue()
