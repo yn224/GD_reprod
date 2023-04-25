@@ -21,7 +21,7 @@ if __name__ == '__main__':
     y -= 1
     y = y.reshape(len(y),1)
     X = X.toarray()
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
     
     q1 = Queue()
     q2 = Queue()

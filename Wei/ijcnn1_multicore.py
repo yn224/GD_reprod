@@ -33,7 +33,7 @@ if __name__ == '__main__':
     p1 = Process(target=Logistic_Regression_SGD, args=(X_train, y_train, 0.12, iterations, 0, q1))
     p2 = Process(target=Logistic_Regression_SAG, args=(X_train, y_train, 0.12, iterations, 0, q2))
     p3 = Process(target=Logistic_Regression_SAGA, args=(X_train, y_train, 0.12, iterations, 0, q3))
-    p4 = Process(target=Logistic_Regression_finito, args=(X_train, y_train, 950, iterations, 0, q4))
+    p4 = Process(target=Logistic_Regression_finito, args=(X_train, y_train, 1000, iterations, 0, q4))
     
     p1.start()
     p2.start()

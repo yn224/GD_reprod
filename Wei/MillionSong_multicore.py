@@ -22,7 +22,7 @@ if __name__ == '__main__':
     y = data[:,0]
     y = y.reshape((len(y), 1))
     X = data[:,1:]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, shuffle=False)
     
     q1 = Queue()
     q2 = Queue()

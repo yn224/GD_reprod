@@ -23,7 +23,7 @@ if __name__ == '__main__':
     y = y.reshape((len(y), 1))
     df2 = df.drop("reference", axis=1)
     X = np.array(df2)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, shuffle=True)
     
     q1 = Queue()
     q2 = Queue()
@@ -61,9 +61,9 @@ if __name__ == '__main__':
     plt.plot(np.arange(len(costs3)),costs3, label="SAGA", alpha=0.7)
     plt.plot(np.arange(len(costs4)),costs4, label="Finito", alpha=0.7)
     
-    plt.xlabel("Iterations")
+    plt.xlabel("Weight Evaluations")
     plt.ylabel("Squared Loss")
-    plt.title("Iterations vs Loss")
+    plt.title("CT Slice")
     plt.legend()
     plt.yscale("log")
     plt.show()
