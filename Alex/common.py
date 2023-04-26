@@ -7,11 +7,13 @@ from sklearn.metrics import log_loss
 
 # Sigmoid function
 def sigmoid(x):
-    return 1 / (1 + math.exp(-x))
+    x_lst = list(x)
+    x_lst = list(map(lambda x: 1 / (1 + math.exp(-x)), x_lst))
+    return np.array(x_lst)
 
 # Log-loss objective value
 def logloss_cost(w, x, y):
-    y_pred = sigmoid(w @ x)
+    y_pred = sigmoid((x @ w).flatten()[:60000])
     return log_loss(y, y_pred, labels=[0, 1])
 
 # Log-loss gradient value
@@ -65,7 +67,7 @@ def compute_grad(lmda, w, x, y, losstype, reg):
     return res
 
 # Compute the cost function value
-def compute_cost(lmda, w, x, y, losstype, reg):
+def compute_cost(w, x, y, losstype, lmda=0, reg=0):
     res = 0
 
     # Compute respective gradient

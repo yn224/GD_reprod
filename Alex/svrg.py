@@ -1,43 +1,43 @@
 #====================================================================
 # SVRG algorithm implementation
 #====================================================================
-import numpy as np
-import matplotlib.pyplot as plt
+from common import *
 
-# Features: n x d (n samples, each x \in R^d)
-# Labels: n x 1 (n samples, each y \in R)
-# Squared loss \psi_i = (w^T x_i - y_i)^2
-def run_svrg(features, labels, test, step, iterations):
-    print("run_svrg")
-    w = np.zeros(10)
-    update_freq = 0
+def run_svrg(features, labels, step, iterations, inner_iter):
+    n = features.shape[0] # 60000
+    d = features.shape[1] # 28
+    assert n == labels.shape[0]
 
-    grad = 0
-    prev_grad = 0
+    # Initialize weight
+    w = np.zeros(d)
 
+    # Optimality gap
     opt_gap = []
-
-    n = 100
-    grad_tbl = np.zeros((10, 10))
 
     # For each iteration:
     for k in range(iterations):
-        
-        w_tilde = w
 
-        # Keep average gradient
-        mu_tilde = np.sum(grad_tbl) / n
+        # Compute the batch gradient
+        batch_g = 0
+        for i in range(3):
+            x = features[i] # 28 x 28
+            y = labels[i] # scalar
+            batch_g += sigmoid(w)
+        batch_g /= n
 
-        w0 = w_tilde
-
-        for t in range(update_freq):
+        # Inner-update of loop
+        phi = w
+        for _ in range(inner_iter):
             i_t = np.random.randint(0, 10)
-            w = w - step * ()
-        # Compute gradient
+            x = features[i_t]
+            y = labels[i_t]
+            phi -= step * (sigmoid(x @ phi) - sigmoid(x @ w) + batch_g)
 
         # Update weight
+        w = phi
 
-        # Compute cost
+        # Compute suboptimality gap
+        cost = compute_cost(w, features, labels, "logloss")
+        opt_gap.append(cost)
 
-        opt_gap.append()
     return w, opt_gap

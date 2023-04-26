@@ -1,27 +1,36 @@
 #%%
 from keras.datasets import mnist
 import matplotlib.pyplot as plt
+from common import *
 from sag import run_sag
 from saga import run_saga
 from finito import run_finito
+from svrg import run_svrg
 
-#loading the dataset
-(train_X, train_y), (test_X, test_y) = mnist.load_data()
-
-#printing the shapes of the vectors 
-print('X_train: ' + str(train_X.shape))
-print('Y_train: ' + str(train_y.shape))
-print('X_test:  '  + str(test_X.shape))
-print('Y_test:  '  + str(test_y.shape))
-
-for i in range(9):  
-  plt.subplot(330 + 1 + i)
-  plt.imshow(train_X[i], cmap=plt.get_cmap('gray'))
-  plt.show()
+def compute_accuracy():
+    return str(100) + "%"
 
 #--------------------------------------------------------------------
 # Main
 #--------------------------------------------------------------------
 if __name__ == "__main__":
-    print("Hello")
+    # Load the dataset
+    (train_X, train_y), (test_X, test_y) = mnist.load_data()
 
+    # Shapes 
+    # X_train: (60000, 28, 28)
+    # Y_train: (60000,)
+    # X_test:  (10000, 28, 28)
+    # Y_test:  (10000,)
+
+    # w, opt_gap = run_sag(train_X, train_y, (), 0.001, 10000, 50)
+    # acc = compute_accuracy()
+
+    # w, opt_gap = run_saga(train_X, train_y, (), 0.001, 10000, 50)
+    # acc = compute_accuracy()
+
+    # w, opt_gap = run_finito(train_X, train_y, (), 0.001, 10000, 50)
+    # acc = compute_accuracy()
+
+    w, opt_gap = run_svrg(train_X, train_y, 0.001, 5, 3)
+    # acc = compute_accuracy()
