@@ -11,7 +11,7 @@ from tqdm.auto import tqdm
 from sklearn.metrics import log_loss, mean_squared_error
 
 tqdmSwitch = False
-weightEvalRes = 5000
+weightEvalRes = 20000
 
 def convert_labels(y):
     y = np.where(y<5, 0, y)

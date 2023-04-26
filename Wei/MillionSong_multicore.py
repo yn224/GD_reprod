@@ -8,11 +8,11 @@ Created on Sun Apr 16 16:31:58 2023
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import load_digits
 from multiprocessing import Process, Queue
-from algorithms import Linear_Regression_SGD, Linear_Regression_SAG, Linear_Regression_SAGA, Linear_Regression_finito
+from algorithms import Linear_Regression_SGD, Linear_Regression_SAG, Linear_Regression_SAGA, Linear_Regression_finito, Linear_Predict
 plt.rcParams['figure.figsize'] = [8, 8]
 
 if __name__ == '__main__':
@@ -30,12 +30,11 @@ if __name__ == '__main__':
     q4 = Queue()
     
     tic = time.perf_counter()
-    iterations = 500000
+    iterations = 12000000
     p1 = Process(target=Linear_Regression_SGD, args=(X_train, y_train, 3e-9, iterations, 0, q1))
-    p2 = Process(target=Linear_Regression_SAG, args=(X_train, y_train, 3.6e-9, iterations, 0, q2))
+    p2 = Process(target=Linear_Regression_SAG, args=(X_train, y_train, 3.2e-9, iterations, 0, q2))
     p3 = Process(target=Linear_Regression_SAGA, args=(X_train, y_train, 3.6e-9, iterations, 0, q3))
-    p4 = Process(target=Linear_Regression_finito, args=(X_train, y_train, 0.001, iterations, 0, q4))
-
+    p4 = Process(target=Linear_Regression_finito, args=(X_train, y_train, 0.002, iterations, 0, q4))
     
     p1.start()
     p2.start()
@@ -54,16 +53,23 @@ if __name__ == '__main__':
     
     toc = time.perf_counter()
     print(f"Ran in {toc - tic:0.4f} seconds")
+
+    print("Accuracies:")
+    print("SGD:", r2_score(y_test, Linear_Predict(X_test,w1)))
+    print("SAG:", r2_score(y_test, Linear_Predict(X_test,w2)))
+    print("SAGA:", r2_score(y_test, Linear_Predict(X_test,w3)))
+    print("Finito:", r2_score(y_test, Linear_Predict(X_test,w4)))
     
     #Plots
-    plt.plot(np.arange(len(costs1)),costs1, label="SGD", alpha=0.7)
-    plt.plot(np.arange(len(costs2)),costs2, label="SAG", alpha=0.7)
-    plt.plot(np.arange(len(costs3)),costs3, label="SAGA", alpha=0.7)
-    plt.plot(np.arange(len(costs4)),costs4, label="Finito", alpha=0.7)
+    weightEvalRes = 20000
+    plt.plot(np.arange(len(costs1))*weightEvalRes,costs1, label="SGD", alpha=0.7)
+    plt.plot(np.arange(len(costs2))*weightEvalRes,costs2, label="SAG", alpha=0.7)
+    plt.plot(np.arange(len(costs3))*weightEvalRes,costs3, label="SAGA", alpha=0.7)
+    plt.plot(np.arange(len(costs4))*weightEvalRes,costs4, label="Finito", alpha=0.7)
     
-    plt.xlabel("Weight Evaluations")
+    plt.xlabel("Iterations")
     plt.ylabel("Squared Loss")
-    plt.title("MillionSong")
+    plt.title("YearPredictionMSD")
     plt.legend()
     plt.yscale("log")
     plt.show()

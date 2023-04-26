@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from multiprocessing import Process, Queue
 from sklearn.datasets import load_svmlight_file
-from algorithms import Logistic_Regression_SGD, Logistic_Regression_SAG, Logistic_Regression_SAGA, Logistic_Regression_finito
+from algorithms import Logistic_Regression_SGD, Logistic_Regression_SAG, Logistic_Regression_SAGA, Logistic_Regression_finito, Predict
 plt.rcParams['figure.figsize'] = [8, 8]
 
 if __name__ == '__main__':
@@ -31,9 +31,9 @@ if __name__ == '__main__':
     tic = time.perf_counter()
     iterations = 2000000
     p1 = Process(target=Logistic_Regression_SGD, args=(X_train, y_train, 0.01, iterations, 0, q1))
-    p2 = Process(target=Logistic_Regression_SAG, args=(X_train, y_train, 0.06, iterations, 0, q2))
-    p3 = Process(target=Logistic_Regression_SAGA, args=(X_train, y_train, 0.06, iterations, 0, q3))
-    p4 = Process(target=Logistic_Regression_finito, args=(X_train, y_train, 100, iterations, 0, q4))
+    p2 = Process(target=Logistic_Regression_SAG, args=(X_train, y_train, 0.01, iterations, 0, q2))
+    p3 = Process(target=Logistic_Regression_SAGA, args=(X_train, y_train, 0.01, iterations, 0, q3))
+    p4 = Process(target=Logistic_Regression_finito, args=(X_train, y_train, 5300, iterations, 0, q4))
     
     p1.start()
     p2.start()
@@ -52,14 +52,21 @@ if __name__ == '__main__':
     
     toc = time.perf_counter()
     print(f"Ran in {toc - tic:0.4f} seconds")
+
+    print("Accuracies:")
+    print("SGD:", accuracy_score(y_test, Predict(X_test,w1,0)))
+    print("SGA:", accuracy_score(y_test, Predict(X_test,w2,0)))
+    print("SAGA:", accuracy_score(y_test, Predict(X_test,w3,0)))
+    print("Finito:", accuracy_score(y_test, Predict(X_test,w4,0)))
     
     #Plots
-    plt.plot(np.arange(len(costs1)),costs1, label="SGD", alpha=0.7)
-    plt.plot(np.arange(len(costs2)),costs2, label="SAG", alpha=0.7)
-    plt.plot(np.arange(len(costs3)),costs3, label="SAGA", alpha=0.7)
-    plt.plot(np.arange(len(costs4)),costs4, label="Finito", alpha=0.7)
+    weightEvalRes = 20000
+    plt.plot(np.arange(len(costs1))*weightEvalRes,costs1, label="SGD", alpha=0.7)
+    plt.plot(np.arange(len(costs2))*weightEvalRes,costs2, label="SAG", alpha=0.7)
+    plt.plot(np.arange(len(costs3))*weightEvalRes,costs3, label="SAGA", alpha=0.7)
+    plt.plot(np.arange(len(costs4))*weightEvalRes,costs4, label="Finito", alpha=0.7)
 
-    plt.xlabel("Weight Evaluations")
+    plt.xlabel("Iterations")
     plt.ylabel("Log Loss")
     plt.title("Covertype")
     plt.legend()
