@@ -14,7 +14,7 @@ from sklearn.datasets import load_digits
 from multiprocessing import Process, Queue
 from sklearn.datasets import load_svmlight_file
 from algorithms import convert_labels, Logistic_Regression_SGD, Logistic_Regression_SAG, Logistic_Regression_SAGA, Logistic_Regression_finito, Predict
-plt.rcParams['figure.figsize'] = [8, 8]
+plt.rcParams['figure.figsize'] = [10, 5]
 
 if __name__ == '__main__':
     #Load data and split train and test
@@ -34,11 +34,14 @@ if __name__ == '__main__':
     q4 = Queue()
     
     tic = time.perf_counter()
-    iterations = 1000000
-    p1 = Process(target=Logistic_Regression_SGD, args=(X_train, y_train, 0.005, iterations, 0, q1))
-    p2 = Process(target=Logistic_Regression_SAG, args=(X_train, y_train, 0.008, iterations, 0, q2))
-    p3 = Process(target=Logistic_Regression_SAGA, args=(X_train, y_train, 0.008, iterations, 0, q3))
-    p4 = Process(target=Logistic_Regression_finito, args=(X_train, y_train, 450, iterations, 0, q4))
+    n = X_train.shape[0]
+    epochs = 15
+    iterations = n*epochs
+    L = 0.001
+    p1 = Process(target=Logistic_Regression_SGD, args=(X_train, y_train, 0.005, iterations, L, q1, n))
+    p2 = Process(target=Logistic_Regression_SAG, args=(X_train, y_train, 0.008, iterations, L, q2, n))
+    p3 = Process(target=Logistic_Regression_SAGA, args=(X_train, y_train, 0.008, iterations, L, q3, n))
+    p4 = Process(target=Logistic_Regression_finito, args=(X_train, y_train, 450, iterations, 0.05, q4, n))
     
     p1.start()
     p2.start()
@@ -65,14 +68,13 @@ if __name__ == '__main__':
     print("Finito:", accuracy_score(y_test, Predict(X_test,w4,0)))
     
     #Plots
-    weightEvalRes = 20000
-    plt.plot(np.arange(len(costs1))*weightEvalRes,costs1, label="SGD", alpha=0.7)
-    plt.plot(np.arange(len(costs2))*weightEvalRes,costs2, label="SAG", alpha=0.7)
-    plt.plot(np.arange(len(costs3))*weightEvalRes,costs3, label="SAGA", alpha=0.7)
-    plt.plot(np.arange(len(costs4))*weightEvalRes,costs4, label="Finito", alpha=0.7)
+    plt.plot(np.arange(len(costs1)),costs1, label="SGD", alpha=0.7)
+    plt.plot(np.arange(len(costs2)),costs2, label="SAG", alpha=0.7)
+    plt.plot(np.arange(len(costs3)),costs3, label="SAGA", alpha=0.7)
+    plt.plot(np.arange(len(costs4)),costs4, label="Finito", alpha=0.7)
 
-    plt.xlabel("Iterations")
-    plt.ylabel("Log Loss")
+    plt.xlabel("Epochs")
+    plt.ylabel("Full gradient norm")
     plt.title("MNIST")
     plt.legend()
     plt.yscale("log")

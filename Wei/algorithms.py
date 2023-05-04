@@ -9,9 +9,9 @@ import numpy as np
 from scipy.special import expit
 from tqdm.auto import tqdm
 from sklearn.metrics import log_loss, mean_squared_error
+from sklearn import linear_model
 
 tqdmSwitch = False
-weightEvalRes = 20000
 
 def convert_labels(y):
     y = np.where(y<5, 0, y)
@@ -32,8 +32,13 @@ def Predict(x,w,b):
 def Linear_Predict(x,w):
     return x@w
 
+def Linear_closed_form(x,y,L):
+    regr = linear_model.Ridge(alpha=L, fit_intercept=False)
+    regr.fit(x, y)
+    return regr.coef_.T
+
 #---------- Logistic Regression Algorithms ----------#
-def Logistic_Regression_SGD(x, y, eta, K, L=0, q=None):
+def Logistic_Regression_SGD(x, y, eta, K, L=0, q=None, weightEvalRes=20000):
     #Initialize weights and bias
     b = 0
     w = np.zeros([x.shape[1],1])
@@ -57,20 +62,21 @@ def Logistic_Regression_SGD(x, y, eta, K, L=0, q=None):
         y_pred = bound(sigmoid(xx@w))
 
         #Update weights
-        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
-        w = w - a*(grad + L*w)
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1)) + L*w
+        w = w - a*(grad)
 
-        #Compute cost
-        if ((k+1)%weightEvalRes==0):
-            pred = bound(sigmoid(x@w))
-            costs += [log_loss(y, pred, labels = [0,1])]
+        #Evaluate weights
+        if ((k)%weightEvalRes==0):
+            pred = bound(sigmoid(x@w+b))
+            #costs += [log_loss(y, pred, labels = [0,1])]               #Compute cost
+            costs += [np.linalg.norm((x.T@(pred-y))/x.shape[0] + L*w)]  #Compute gradient norm
         
     if q != None:
         q.put([w, b, np.array(costs)])
         
     return w, b, np.array(costs)
 
-def Logistic_Regression_SAG(x, y, eta, K, L=0, q=None):
+def Logistic_Regression_SAG(x, y, eta, K, L=0, q=None, weightEvalRes=20000):
     #Initialize weights and bias
     b = 0
     w = np.zeros([x.shape[1],1])
@@ -102,25 +108,26 @@ def Logistic_Regression_SAG(x, y, eta, K, L=0, q=None):
             m += 1
         
         #Calculate current gradient
-        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1)) + L*w
         #Update gradient table
         G = G - g[idx] + grad
         #Update previous sample gradient
         g[idx] = grad
         #Update weights
-        w = w - a*(G/m + L*w)
+        w = w - a*(G/m)
 
-        #Compute cost
-        if ((k+1)%weightEvalRes==0):
-            pred = bound(sigmoid(x@w))
-            costs += [log_loss(y, pred, labels = [0,1])]
+        #Evaluate weights
+        if ((k)%weightEvalRes==0):
+            pred = bound(sigmoid(x@w+b))
+            #costs += [log_loss(y, pred, labels = [0,1])]               #Compute cost
+            costs += [np.linalg.norm((x.T@(pred-y))/x.shape[0] + L*w)]  #Compute gradient norm
         
     if q != None:
         q.put([w, b, np.array(costs)])
         
     return w, b, np.array(costs)
 
-def Logistic_Regression_SAGA(x, y, eta, K, L=0, q=None):
+def Logistic_Regression_SAGA(x, y, eta, K, L=0, q=None, weightEvalRes=20000):
     #Initialize weights and bias
     b = 0
     w = np.zeros([x.shape[1],1])
@@ -152,25 +159,26 @@ def Logistic_Regression_SAGA(x, y, eta, K, L=0, q=None):
             m += 1
         
         #Calculate current gradient
-        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1)) + L*w
         #Update weights
-        w = w - a*((grad - g[idx] + G/m) + L*w)
+        w = w - a*((grad - g[idx] + G/m))
         #Update gradient table
         G = G - g[idx] + grad
         #Update previous sample gradient
         g[idx] = grad
 
-        #Compute cost
-        if ((k+1)%weightEvalRes==0):
-            pred = bound(sigmoid(x@w))
-            costs += [log_loss(y, pred, labels = [0,1])]
+        #Evaluate weights
+        if ((k)%weightEvalRes==0):
+            pred = bound(sigmoid(x@w+b))
+            #costs += [log_loss(y, pred, labels = [0,1])]               #Compute cost
+            costs += [np.linalg.norm((x.T@(pred-y))/x.shape[0] + L*w)]  #Compute gradient norm
         
     if q != None:
         q.put([w, b, np.array(costs)])
         
     return w, b, np.array(costs)
 
-def Logistic_Regression_finito(x, y, mu, K, L=0, q=None):
+def Logistic_Regression_finito(x, y, mu, K, L=0, q=None, weightEvalRes=20000):
     # Initialize weights and bias
     # b = 0.1
     w = np.zeros([x.shape[1],1])
@@ -214,7 +222,7 @@ def Logistic_Regression_finito(x, y, mu, K, L=0, q=None):
         y_pred = bound(sigmoid(xx@w))
         
         # Calculate current gradient
-        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1)) + L*w
 
         #Update gradient and weight table
         G = G - g[idx] + grad
@@ -235,10 +243,11 @@ def Logistic_Regression_finito(x, y, mu, K, L=0, q=None):
         g[idx] = grad
         p[idx] = w
 
-        #Compute cost
-        if ((k+1)%weightEvalRes==0):
-            pred = bound(sigmoid(x@w))
-            costs += [log_loss(y, pred, labels = [0,1])]
+        #Evaluate weights
+        if ((k)%weightEvalRes==0):
+            pred = bound(sigmoid(x@w+b))
+            #costs += [log_loss(y, pred, labels = [0,1])]               #Compute cost
+            costs += [np.linalg.norm((x.T@(pred-y))/x.shape[0] + L*w)]  #Compute gradient norm
 
     if q != None:
         q.put([w, b, np.array(costs)])
@@ -247,7 +256,8 @@ def Logistic_Regression_finito(x, y, mu, K, L=0, q=None):
 
 
 #---------- Linear Regression Algorithms ----------#
-def Linear_Regression_SGD(x, y, eta, K, L=0, q=None):
+def Linear_Regression_SGD(x, y, eta, K, L=0, q=None, weightEvalRes=20000):
+    w_star = Linear_closed_form(x,y,L)
     #Initialize weights and bias
     b = 0
     w = np.zeros([x.shape[1],1])
@@ -271,20 +281,23 @@ def Linear_Regression_SGD(x, y, eta, K, L=0, q=None):
         y_pred = xx@w
 
         #Update weights
-        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
-        w = w - a*(grad + L*w)
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1)) + L*w
+        w = w - a*(grad)
 
-        #Compute cost
-        if ((k+1)%weightEvalRes==0):
+        #Evaluate Weights
+        if ((k)%weightEvalRes==0):
             pred = x@w
-            costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
+            #true = x@w_star
+            #costs += [(mean_squared_error(y, pred)-mean_squared_error(y, true))/x.shape[0]]    #Compute sub-optimality gap
+            costs += [np.linalg.norm((x.T@(pred-y))/x.shape[0] + L*w)]                          #Compute gradient norm
         
     if q != None:
         q.put([w, b, np.array(costs)])
         
     return w, b, np.array(costs)
 
-def Linear_Regression_SAG(x, y, eta, K, L=0, q=None):
+def Linear_Regression_SAG(x, y, eta, K, L=0, q=None, weightEvalRes=20000):
+    w_star = Linear_closed_form(x,y,L)
     #Initialize weights and bias
     b = 0
     w = np.zeros([x.shape[1],1])
@@ -316,7 +329,7 @@ def Linear_Regression_SAG(x, y, eta, K, L=0, q=None):
             m += 1
         
         #Calculate current gradient
-        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1)) + L*w
         #Update gradient table
         G = G - g[idx] + grad
         #Update previous sample gradient
@@ -324,17 +337,20 @@ def Linear_Regression_SAG(x, y, eta, K, L=0, q=None):
         #Update weights
         w = w - a*(G/m + L*w)
 
-        #Compute cost
-        if ((k+1)%weightEvalRes==0):
+        ##Evaluate Weights
+        if ((k)%weightEvalRes==0):
             pred = x@w
-            costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
+            #true = x@w_star
+            #costs += [(mean_squared_error(y, pred)-mean_squared_error(y, true))/x.shape[0]]    #Compute sub-optimality gap
+            costs += [np.linalg.norm((x.T@(pred-y))/x.shape[0] + L*w)]                          #Compute gradient norm
         
     if q != None:
         q.put([w, b, np.array(costs)])
         
     return w, b, np.array(costs)
 
-def Linear_Regression_SAGA(x, y, eta, K, L=0, q=None):
+def Linear_Regression_SAGA(x, y, eta, K, L=0, q=None, weightEvalRes=20000):
+    w_star = Linear_closed_form(x,y,L)
     #Initialize weights and bias
     b = 0
     w = np.zeros([x.shape[1],1])
@@ -366,7 +382,7 @@ def Linear_Regression_SAGA(x, y, eta, K, L=0, q=None):
             m += 1
         
          #Calculate current gradient
-        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1)) + L*w
         #Update weights
         w = w - a*((grad - g[idx] + G/m) + L*w)
         #Update gradient table
@@ -374,17 +390,20 @@ def Linear_Regression_SAGA(x, y, eta, K, L=0, q=None):
         #Update previous sample gradient
         g[idx] = grad
 
-        #Compute cost
-        if ((k+1)%weightEvalRes==0):
+        #Evaluate Weights
+        if ((k)%weightEvalRes==0):
             pred = x@w
-            costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
+            #true = x@w_star
+            #costs += [(mean_squared_error(y, pred)-mean_squared_error(y, true))/x.shape[0]]    #Compute sub-optimality gap
+            costs += [np.linalg.norm((x.T@(pred-y))/x.shape[0] + L*w)]                          #Compute gradient norm
         
     if q != None:
         q.put([w, b, np.array(costs)])
         
     return w, b, np.array(costs)
 
-def Linear_Regression_finito(x, y, mu, K, L=0, q=None):
+def Linear_Regression_finito(x, y, mu, K, L=0, q=None, weightEvalRes=20000):
+    w_star = Linear_closed_form(x,y,L)
     # Initialize weights and bias
     # b = 0.1
     w = np.zeros([x.shape[1],1])
@@ -428,7 +447,7 @@ def Linear_Regression_finito(x, y, mu, K, L=0, q=None):
         y_pred = xx@w
         
         # Calculate current gradient
-        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1))
+        grad = (xx*(y_pred-yy)).reshape((x.shape[1],1)) + L*w
 
         #Update gradient and weight table
         G = G - g[idx] + grad
@@ -449,10 +468,12 @@ def Linear_Regression_finito(x, y, mu, K, L=0, q=None):
         g[idx] = grad
         p[idx] = w
 
-        #Compute cost
-        if ((k+1)%weightEvalRes==0):
+        #Evaluate Weights
+        if ((k)%weightEvalRes==0):
             pred = x@w
-            costs += [mean_squared_error(y, pred, squared=False)/x.shape[0]]
+            #true = x@w_star
+            #costs += [(mean_squared_error(y, pred)-mean_squared_error(y, true))/x.shape[0]]    #Compute sub-optimality gap
+            costs += [np.linalg.norm((x.T@(pred-y))/x.shape[0] + L*w)]                          #Compute gradient norm
 
     if q != None:
         q.put([w, b, np.array(costs)])

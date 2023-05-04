@@ -14,7 +14,7 @@ from sklearn.datasets import load_digits
 from multiprocessing import Process, Queue
 import pandas as pd
 from algorithms import Linear_Regression_SGD, Linear_Regression_SAG, Linear_Regression_SAGA, Linear_Regression_finito, Linear_Predict
-plt.rcParams['figure.figsize'] = [8, 8]
+plt.rcParams['figure.figsize'] = [10, 5]
 
 if __name__ == '__main__':
     #Load data and split train and test
@@ -31,11 +31,14 @@ if __name__ == '__main__':
     q4 = Queue()
 
     tic = time.perf_counter()
-    iterations = 1000000
-    p1 = Process(target=Linear_Regression_SGD, args=(X_train, y_train, 4e-5, iterations, 0, q1))
-    p2 = Process(target=Linear_Regression_SAG, args=(X_train, y_train, 5e-5, iterations, 0, q2))
-    p3 = Process(target=Linear_Regression_SAGA, args=(X_train, y_train, 1e-4, iterations, 0, q3))
-    p4 = Process(target=Linear_Regression_finito, args=(X_train, y_train, 3.5, iterations, 0, q4))
+    n = X_train.shape[0]
+    epochs = 15
+    iterations = n*epochs
+    L = 0.0001
+    p1 = Process(target=Linear_Regression_SGD, args=(X_train, y_train, 1e-5, iterations, L, q1, n))
+    p2 = Process(target=Linear_Regression_SAG, args=(X_train, y_train, 5e-5, iterations, L, q2, n))
+    p3 = Process(target=Linear_Regression_SAGA, args=(X_train, y_train, 1e-4, iterations, L, q3, n))
+    p4 = Process(target=Linear_Regression_finito, args=(X_train, y_train, 3.5, iterations, 0.9, q4, n))
     
     p1.start()
     p2.start()
@@ -62,14 +65,13 @@ if __name__ == '__main__':
     print("Finito:", r2_score(y_test, Linear_Predict(X_test,w4)))
     
     #Plots
-    weightEvalRes = 20000
-    plt.plot(np.arange(len(costs1))*weightEvalRes,costs1, label="SGD", alpha=0.7)
-    plt.plot(np.arange(len(costs2))*weightEvalRes,costs2, label="SAG", alpha=0.7)
-    plt.plot(np.arange(len(costs3))*weightEvalRes,costs3, label="SAGA", alpha=0.7)
-    plt.plot(np.arange(len(costs4))*weightEvalRes,costs4, label="Finito", alpha=0.7)
+    plt.plot(np.arange(len(costs1)),costs1, label="SGD", alpha=0.7)
+    plt.plot(np.arange(len(costs2)),costs2, label="SAG", alpha=0.7)
+    plt.plot(np.arange(len(costs3)),costs3, label="SAGA", alpha=0.7)
+    plt.plot(np.arange(len(costs4)),costs4, label="Finito", alpha=0.7)
     
-    plt.xlabel("Iterations")
-    plt.ylabel("Squared Loss")
+    plt.xlabel("Epochs")
+    plt.ylabel("Full gradient norm")
     plt.title("CT Slice")
     plt.legend()
     plt.yscale("log")
