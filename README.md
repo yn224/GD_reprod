@@ -5,6 +5,6 @@ Each script contains different algorithms implemented in Python, that is talked 
 
 > Ihab F. Ilyas, Theodoros Rekatsinas, Vishnu Konda, Jeffrey Pound, Xiaoguang Qi, Mohamed Soliman. [Saga: A Platform for Continuous Construction and Serving of Knowledge at Scale](https://doi.org/10.1145%2F3514221.3526049). In Proceedings of the 2022 International Conference on Management of Data
 
-* `sag.py` contains SAG algorithm implementation
-* `finito.py` contains Finito algorithm implementation
-* `saga.py` contains SAGA algorithm implementation
+`Wei` directory contains the most up-to-date algorithmic implementation.
+
+`scratch/Youngseok` directory contains variety of scratch works, including future works to be performed using cross-validation and finding optimal weight `w*`.
